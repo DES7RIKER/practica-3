@@ -92,6 +92,22 @@ wire secureRegWrite_wire;
 wire jr_wire;
 integer ALUStatus;
 
+wire [31:0] ID_Instruction_wire;
+wire [31:0] ID_PC_4_wire;
+
+PipeRegister
+#(
+	.N(64)
+)
+Register
+(
+	.clk(clk),
+	.reset(reset),
+	.enable(1'b1),
+	.DataInput({Instruction_wire, PC_4_wire}),
+	
+	.DataOutput({ID_Instruction_wire, ID_PC_4_wire})
+);
 
 //******************************************************************/
 //******************************************************************/
@@ -101,7 +117,7 @@ integer ALUStatus;
 Control
 ControlUnit
 (
-	.OP(Instruction_wire[31:26]),
+	.OP(ID_Instruction_wire[31:26]),
 	.RegDst(RegDst_wire),
 	.BranchNE(BranchNE_wire),
 	.BranchEQ(BranchEQ_wire),
@@ -185,8 +201,8 @@ Multiplexer2to1
 MUX_ForRTypeAndIType
 (
 	.Selector(RegDst_wire),
-	.MUX_Data0(Instruction_wire[20:16]),
-	.MUX_Data1(Instruction_wire[15:11]),
+	.MUX_Data0(ID_Instruction_wire[20:16]),
+	.MUX_Data1(ID_Instruction_wire[15:11]),
 	
 	.MUX_Output(WriteRegisternojal_wire)
 
@@ -234,7 +250,7 @@ MUX_Write_dataRa
 	.Selector(jal_wire),
 	.MUX_Data0(WriteDatanojal_wire), //lo usa el memtoreg
 	//.MUX_Data1(PC_8_wire), //pc8
-	.MUX_Data1(PC_4_wire),
+	.MUX_Data1(ID_PC_4_wire),
 	.MUX_Output(WriteData_wire)
 
 );
@@ -275,7 +291,7 @@ MUX_ForJumpAddress
 (
 	.Selector(jump_wire),
 	.MUX_Data0(branchAddress_wire),
-	.MUX_Data1({PC_4_wire[31:28], Instruction_wire[25:0], 2'b00}), // Jump Address
+	.MUX_Data1({PC_4_wire[31:28], ID_Instruction_wire[25:0], 2'b00}), // Jump Address
 	
 	.MUX_Output(jumpAddress_wire)
 
@@ -289,8 +305,8 @@ Register_File
 	.reset(reset),
 	.RegWrite(secureRegWrite_wire),
 	.WriteRegister(WriteRegister_wire),
-	.ReadRegister1(Instruction_wire[25:21]),
-	.ReadRegister2(Instruction_wire[20:16]),
+	.ReadRegister1(ID_Instruction_wire[25:21]),
+	.ReadRegister2(ID_Instruction_wire[20:16]),
 	.WriteData(WriteData_wire),
 	.ReadData1(ReadData1_wire),
 	.ReadData2(ReadData2_wire)
@@ -300,7 +316,7 @@ Register_File
 SignExtend
 SignExtendForConstants
 (   
-	.DataInput(Instruction_wire[15:0]),
+	.DataInput(ID_Instruction_wire[15:0]),
    .SignExtendOutput(InmmediateExtend_wire)
 );
 
@@ -325,7 +341,7 @@ ALUControl
 ArithmeticLogicUnitControl
 (
 	.ALUOp(ALUOp_wire),
-	.ALUFunction(Instruction_wire[5:0]),
+	.ALUFunction(ID_Instruction_wire[5:0]),
 	.ALUOperation(ALUOperation_wire),
 	.Jr(jr_wire)
 
@@ -352,7 +368,7 @@ ArithmeticLogicUnit
 	.ALUOperation(ALUOperation_wire),
 	.A(ReadData1_wire),
 	.B(ReadData2OrInmmediate_wire),
-	.shamt(Instruction_wire[10:6]),
+	.shamt(ID_Instruction_wire[10:6]),
 	.Zero(Zero_wire),
 	.ALUResult(ALUResult_wire)
 );
