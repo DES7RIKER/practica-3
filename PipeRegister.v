@@ -9,7 +9,7 @@
 * Date:
 *	01/03/2014
 ******************************************************************/
-module Register
+module PipeRegister
 #(
 	parameter N=32
 )
@@ -23,7 +23,7 @@ module Register
 	output reg [N-1:0] DataOutput
 );
 
-always@(negedge reset or negedge clk) begin // Para que escriba en flanco de bajada
+always@(negedge reset or posedge clk) begin // Para que escriba en flanco de subida
 	if(reset==0)
 		DataOutput <= 0;
 	else	
