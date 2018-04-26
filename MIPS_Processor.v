@@ -113,6 +113,20 @@ wire [4:0]	EX_RD;
 wire [5:0]	EX_FUNCT;
 wire [3:0]  EX_ALUOp_wire;
 
+wire MEM_RegWrite_wire;
+wire MEM_jal_wire;
+wire MEM_MemtoReg_wire;
+wire MEM_BranchEQ_wire;
+wire MEM_BranchNE_wire;
+wire MEM_MemRead_wire;
+wire MEM_MemWrite_wire;
+wire MEM_Zero_wire;
+wire [31:0] MEM_pcWithBranch_wire;
+wire [31:0] MEM_ALUResult_wire;
+wire [31:0] MEM_ReadData2_wire;
+wire [31:0] MEM_PC_4_wire;
+wire [4:0]	MEM_WriteRegister_wire;
+
 PipeRegister
 #(
 	.N(64)
@@ -174,25 +188,6 @@ ID_EX_Register
 					 EX_ALUOp_wire})
 );
 
-
-
-wire MEM_RegWrite_wire;
-wire MEM_jal_wire;
-wire MEM_MemtoReg_wire;
-wire MEM_BranchEQ_wire;
-wire MEM_BranchNE_wire;
-wire MEM_MemRead_wire;
-wire MEM_MemWrite_wire;
-wire MEM_Zero_wire;
-wire [31:0] MEM_pcWithBranch_wire;
-wire [31:0] MEM_ALUResult_wire;
-wire [31:0] MEM_ReadData2_wire;
-wire [31:0] MEM_PC_4_wire;
-wire [4:0]	MEM_WriteRegister_wire;
-
-
-
-
 PipeRegister
 #(
 	.N(141)
@@ -230,6 +225,8 @@ EX_MEM_Register
 					 MEM_PC_4_wire,
 					 MEM_WriteRegister_wire})
 );
+
+
 
 //******************************************************************/
 //******************************************************************/
@@ -376,9 +373,9 @@ Multiplexer2to1
 )
 MUX_ForBranchAddress
 (
-	.Selector(branch_wire),
+	.Selector(MEM_branch_wire),
 	.MUX_Data0(PC_4_wire),
-	.MUX_Data1(pcWithBranch_wire), 
+	.MUX_Data1(MEM_pcWithBranch_wire), 
 	
 	.MUX_Output(branchAddress_wire)
 
