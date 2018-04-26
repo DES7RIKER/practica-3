@@ -22,7 +22,7 @@
 *	luispizano@iteso.mx
 * Date:
 *	12/06/2016
-******************************************************************/
+*************************** ***************************************/
 
 
 module MIPS_Processor
@@ -174,6 +174,63 @@ ID_EX_Register
 					 EX_ALUOp_wire})
 );
 
+
+
+wire MEM_RegWrite_wire;
+wire MEM_jal_wire;
+wire MEM_MemtoReg_wire;
+wire MEM_BranchEQ_wire;
+wire MEM_BranchNE_wire;
+wire MEM_MemRead_wire;
+wire MEM_MemWrite_wire;
+wire MEM_Zero_wire;
+wire [31:0] MEM_pcWithBranch_wire;
+wire [31:0] MEM_ALUResult_wire;
+wire [31:0] MEM_ReadData2_wire;
+wire [31:0] MEM_PC_4_wire;
+wire [4:0]	MEM_WriteRegister_wire;
+
+
+
+
+PipeRegister
+#(
+	.N(141)
+)
+EX_MEM_Register
+(
+	.clk(clk),
+	.reset(reset),
+	.enable(1'b1),
+	.DataInput({EX_RegWrite_wire,  
+					EX_jal_wire,
+					EX_MemtoReg_wire,
+					EX_BranchEQ_wire,
+					EX_BranchNE_wire,
+					EX_MemRead_wire,
+					EX_MemWrite_wire,
+					pcWithBranch_wire,
+					Zero_wire,
+					ALUResult_wire,
+					EX_ReadData2_wire,
+					EX_PC_4_wire,
+					WriteRegister_wire}),
+	
+	.DataOutput({MEM_RegWrite_wire,  
+					 MEM_jal_wire,
+					 MEM_MemtoReg_wire,
+					 MEM_BranchEQ_wire,
+					 MEM_BranchNE_wire,
+					 MEM_MemRead_wire,
+					 MEM_MemWrite_wire,
+					 MEM_pcWithBranch_wire,
+					 MEM_Zero_wire,
+					 MEM_ALUResult_wire,
+					 MEM_ReadData2_wire,
+					 MEM_PC_4_wire,
+					 MEM_WriteRegister_wire})
+);
+
 //******************************************************************/
 //******************************************************************/
 //******************************************************************/
@@ -225,10 +282,10 @@ DataMemory
 )
 RAMDataMemory
 (
-	.WriteData(ReadData2_wire),
-	.Address(ALUResult_wire[9:2]),
-	.MemWrite(MemWrite_wire),
-	.MemRead(MemRead_wire), 
+	.WriteData(MEM_ReadData2_wire),
+	.Address(MEM_ALUResult_wire[9:2]),
+	.MemWrite(MEM_MemWrite_wire),
+	.MemRead(MEM_MemRead_wire), 
 	.clk(clk),
 	.ReadData(RAM_DataOut)
 );
@@ -241,17 +298,6 @@ PC_Plus_4
 	
 	.Result(PC_4_wire)
 );
-
-/*Adder32bits
-PC_Plus_8
-(
-	.Data0(PC_4_wire),
-	.Data1(4),
-	
-	.Result(PC_8_wire)
-);
-*/
-
 
 
 //******************************************************************/
@@ -314,7 +360,7 @@ MUX_Write_dataRa
 (
 	.Selector(jal_wire),
 	.MUX_Data0(WriteDatanojal_wire), //lo usa el memtoreg
-	.MUX_Data1(),Error
+	.MUX_Data1(WriteDatanojal_wire),//Error
 	.MUX_Output(WriteData_wire)
 
 );
@@ -441,9 +487,10 @@ ArithmeticLogicUnit
 assign ALUResultOut = ALUResult_wire;
 
 
-assign branchA_wire = BranchNE_wire && ~Zero_wire;
-assign branchB_wire = BranchEQ_wire && Zero_wire;
+assign branchA_wire = MEM_BranchNE_wire && ~MEM_Zero_wire;
+assign branchB_wire = MEM_BranchEQ_wire && MEM_Zero_wire;
 assign branch_wire  = branchA_wire || branchB_wire;
+
 assign secureRegWrite_wire = RegWrite_wire && ~jr_wire;
 
 endmodule
