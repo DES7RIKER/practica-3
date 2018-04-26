@@ -127,6 +127,14 @@ wire [31:0] MEM_ReadData2_wire;
 wire [31:0] MEM_PC_4_wire;
 wire [4:0]	MEM_WriteRegister_wire;
 
+wire WB_RegWrite_wire;
+wire WB_jal_wire;
+wire WB_MemtoReg_wire;
+wire [31:0] WB_ALUResult_wire;
+wire [31:0] WB_RAM_DataOut;
+wire [31:0] WB_PC_4_wire;
+wire [4:0]	WB_WriteRegister_wire;
+
 PipeRegister
 #(
 	.N(64)
@@ -226,7 +234,31 @@ EX_MEM_Register
 					 MEM_WriteRegister_wire})
 );
 
-
+PipeRegister
+#(
+	.N(104)
+)
+MEM_WB_Register
+(
+	.clk(clk),
+	.reset(reset),
+	.enable(1'b1),
+	.DataInput({MEM_RegWrite_wire,  
+					MEM_jal_wire,
+					MEM_MemtoReg_wire,
+					MEM_ALUResult_wire,
+					MEM_PC_4_wire,
+					RAM_DataOut,
+					MEM_WriteRegister_wire}),
+	
+	.DataOutput({WB_RegWrite_wire,  
+					 WB_jal_wire,
+					 WB_MemtoReg_wire,
+					 WB_ALUResult_wire,
+					 WB_PC_4_wire,
+					 WB_RAM_DataOut,
+					 WB_WriteRegister_wire})
+);
 
 //******************************************************************/
 //******************************************************************/
@@ -322,9 +354,9 @@ Multiplexer2to1
 )
 MUX_ToRegFromRAMALU
 (
-	.Selector(MemtoReg_wire),
-	.MUX_Data0(ALUResult_wire),
-	.MUX_Data1(RAM_DataOut),
+	.Selector(WB_MemtoReg_wire),
+	.MUX_Data0(WB_ALUResult_wire),
+	.MUX_Data1(WB_RAM_DataOut),
 	
 	.MUX_Output(WriteDatanojal_wire)
 
@@ -355,9 +387,9 @@ Multiplexer2to1
 )
 MUX_Write_dataRa
 (
-	.Selector(jal_wire),
+	.Selector(WB_jal_wire),
 	.MUX_Data0(WriteDatanojal_wire), //lo usa el memtoreg
-	.MUX_Data1(WriteDatanojal_wire),//Error
+	.MUX_Data1(WB_PC_4_wire),
 	.MUX_Output(WriteData_wire)
 
 );
@@ -412,7 +444,7 @@ Register_File
 	.clk(clk),
 	.reset(reset),
 	.RegWrite(secureRegWrite_wire),
-	.WriteRegister(WriteRegister_wire),
+	.WriteRegister(WB_WriteRegister_wire),
 	.ReadRegister1(ID_Instruction_wire[25:21]),
 	.ReadRegister2(ID_Instruction_wire[20:16]),
 	.WriteData(WriteData_wire),
@@ -461,7 +493,8 @@ Multiplexer2to1
 )
 MUX_ForJrJump
 (
-	.Selector(jr_wire),
+	//.Selector(jr_wire),
+	.Selector(1'b0),
 	.MUX_Data0(jumpAddress_wire),
 	.MUX_Data1(ReadData1_wire),
 	
@@ -488,7 +521,8 @@ assign branchA_wire = MEM_BranchNE_wire && ~MEM_Zero_wire;
 assign branchB_wire = MEM_BranchEQ_wire && MEM_Zero_wire;
 assign branch_wire  = branchA_wire || branchB_wire;
 
-assign secureRegWrite_wire = RegWrite_wire && ~jr_wire;
+//assign secureRegWrite_wire = WB_RegWrite_wire && ~jr_wire;
+assign secureRegWrite_wire = WB_RegWrite_wire && ~1'b0;
 
 endmodule
 
