@@ -111,6 +111,7 @@ wire [31:0] EX_InmmediateExtend_wire;
 wire [4:0]	EX_RT;
 wire [4:0]	EX_RD;
 wire [5:0]	EX_FUNCT;
+wire [4:0]	EX_SHAMT;
 wire [3:0]  EX_ALUOp_wire;
 
 wire MEM_RegWrite_wire;
@@ -152,7 +153,7 @@ IF_ID_Register
 
 PipeRegister
 #(
-	.N(157)
+	.N(162)
 )
 ID_EX_Register
 (
@@ -175,6 +176,7 @@ ID_EX_Register
 					ID_Instruction_wire[20:16],//RT
 					ID_Instruction_wire[15:11],//RD
 					ID_Instruction_wire[5:0],  //FUNCT
+					ID_Instruction_wire[10:6], //SHAMT
 					ALUOp_wire}),
 	
 	.DataOutput({EX_RegWrite_wire, 
@@ -193,6 +195,7 @@ ID_EX_Register
 					 EX_RT,
 					 EX_RD,
 					 EX_FUNCT,
+					 EX_SHAMT,
 					 EX_ALUOp_wire})
 );
 
@@ -509,7 +512,7 @@ ArithmeticLogicUnit
 	.ALUOperation(ALUOperation_wire),
 	.A(EX_ReadData1_wire),
 	.B(ReadData2OrInmmediate_wire),
-	.shamt(ID_Instruction_wire[10:6]),
+	.shamt(EX_SHAMT),
 	.Zero(Zero_wire),
 	.ALUResult(ALUResult_wire)
 );
