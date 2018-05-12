@@ -145,6 +145,11 @@ wire [1:0] forwardB_wire;
 wire [31:0] multiplexerB1_wire;
 wire [31:0] ALUOperand_B_wire;
 
+wire enablePC_wire;
+wire enableRegister_IF_ID_wire;
+wire disableControlSignals_wire;
+wire [8:0] controlSignals_wire;
+
 PipeRegister
 #(
 	.N(64)
@@ -153,7 +158,7 @@ IF_ID_Register
 (
 	.clk(clk),
 	.reset(reset),
-	.enable(1'b1),
+	.enable(enableRegister_IF_ID_wire),
 	.DataInput({Instruction_wire, PC_4_wire}),
 	
 	.DataOutput({ID_Instruction_wire, ID_PC_4_wire})
@@ -169,15 +174,7 @@ ID_EX_Register
 	.clk(clk),
 	.reset(reset),
 	.enable(1'b1),
-	.DataInput({RegWrite_wire, 
-					RegDst_wire, 
-					jal_wire,
-					ALUSrc_wire,
-					MemtoReg_wire,
-					BranchEQ_wire,
-					BranchNE_wire,
-					MemRead_wire,
-					MemWrite_wire,
+	.DataInput({controlSignals_wire,
 					ID_PC_4_wire,
 					ReadData1_wire,
 					ReadData2_wire,
@@ -355,6 +352,48 @@ MUX_ForwardB2
 //******************************************************************/
 //******************************************************************/
 //******************************************************************/
+HazardDetectionUnit
+HazardDetectionUnit1
+(
+	.ID_EX_MemRead(EX_MemRead_wire),
+	.ID_EX_WriteRegister(WriteRegister_wire),
+	.IF_ID_RegisterRs(ID_Instruction_wire[25:21]),
+	.IF_ID_RegisterRt(ID_Instruction_wire[20:16]),
+
+	.EnablePC(enablePC_wire),
+	.EnableRegister_IF_ID(enableRegister_IF_ID_wire),
+	.DisableControlSignals(disableControlSignals_wire)
+	
+);
+
+Multiplexer2to1
+#(
+	.NBits(9)
+)
+MUX_StallForLW
+(
+	.Selector(disableControlSignals_wire),
+	.MUX_Data0(9'b000000000),
+	.MUX_Data1({RegWrite_wire, 
+					RegDst_wire, 
+					jal_wire,
+					ALUSrc_wire,
+					MemtoReg_wire,
+					BranchEQ_wire,
+					BranchNE_wire,
+					MemRead_wire,
+					MemWrite_wire}),
+	
+	.MUX_Output(controlSignals_wire)
+
+);
+
+//******************************************************************/
+//******************************************************************/
+//******************************************************************/
+//******************************************************************/
+//******************************************************************/
+
 Control
 ControlUnit
 (
@@ -380,6 +419,7 @@ program_counter
 (
 	.clk(clk),
 	.reset(reset),
+	.enable(enablePC_wire),
 	.NewPC({10'b0000000001, newPC_wire[21:0]}), // Completar direcciones como en MARS
 	.PCValue(PC_wire)
 );
