@@ -108,6 +108,7 @@ wire [31:0] EX_PC_4_wire;
 wire [31:0] EX_ReadData1_wire;
 wire [31:0] EX_ReadData2_wire;
 wire [31:0] EX_InmmediateExtend_wire;
+wire [4:0]	EX_RS;
 wire [4:0]	EX_RT;
 wire [4:0]	EX_RD;
 wire [5:0]	EX_FUNCT;
@@ -136,6 +137,14 @@ wire [31:0] WB_RAM_DataOut;
 wire [31:0] WB_PC_4_wire;
 wire [4:0]	WB_WriteRegister_wire;
 
+wire [1:0] forwardA_wire;
+wire [31:0] multiplexerA1_wire;
+wire [31:0] ALUOperand_A_wire;
+
+wire [1:0] forwardB_wire;
+wire [31:0] multiplexerB1_wire;
+wire [31:0] ALUOperand_B_wire;
+
 PipeRegister
 #(
 	.N(64)
@@ -153,7 +162,7 @@ IF_ID_Register
 
 PipeRegister
 #(
-	.N(162)
+	.N(167)
 )
 ID_EX_Register
 (
@@ -173,6 +182,7 @@ ID_EX_Register
 					ReadData1_wire,
 					ReadData2_wire,
 					InmmediateExtend_wire,
+					ID_Instruction_wire[25:21],//RS
 					ID_Instruction_wire[20:16],//RT
 					ID_Instruction_wire[15:11],//RD
 					ID_Instruction_wire[5:0],  //FUNCT
@@ -192,6 +202,7 @@ ID_EX_Register
 					 EX_ReadData1_wire,
 					 EX_ReadData2_wire,
 					 EX_InmmediateExtend_wire,
+					 EX_RS,
 					 EX_RT,
 					 EX_RD,
 					 EX_FUNCT,
@@ -261,6 +272,82 @@ MEM_WB_Register
 					 WB_PC_4_wire,
 					 WB_RAM_DataOut,
 					 WB_WriteRegister_wire})
+);
+
+//******************************************************************/
+//******************************************************************/
+//******************************************************************/
+//******************************************************************/
+//******************************************************************/
+ForwardUnit
+ForwardUnit1
+(
+	.EX_MEM_RegWrite(MEM_RegWrite_wire),
+	.EX_MEM_WriteRegister(MEM_WriteRegister_wire),
+	.ID_EX_RegisterRs(EX_RS),
+	.ID_EX_RegisterRt(EX_RT),
+	.MEM_WB_RegWrite(WB_RegWrite_wire),
+	.MEM_WB_WriteRegister(WB_WriteRegister_wire),
+
+	.ForwardA(forwardA_wire),
+	.ForwardB(forwardB_wire)
+);
+
+//A
+Multiplexer2to1
+#(
+	.NBits(32)
+)
+MUX_ForwardA1
+(
+	.Selector(forwardA_wire[1]),
+	.MUX_Data0(EX_ReadData1_wire),
+	.MUX_Data1(MEM_ALUResult_wire),
+	
+	.MUX_Output(multiplexerA1_wire)
+
+);
+
+Multiplexer2to1
+#(
+	.NBits(32)
+)
+MUX_ForwardA2
+(
+	.Selector(forwardA_wire[0]),
+	.MUX_Data0(multiplexerA1_wire),
+	.MUX_Data1(WriteData_wire),
+	
+	.MUX_Output(ALUOperand_A_wire)
+
+);
+// B
+Multiplexer2to1
+#(
+	.NBits(32)
+)
+MUX_ForwardB1
+(
+	.Selector(forwardB_wire[1]),
+	.MUX_Data0(ReadData2OrInmmediate_wire), //Salida del multiplexor que elige registro o inmediato
+	.MUX_Data1(MEM_ALUResult_wire),
+	
+	.MUX_Output(multiplexerB1_wire)
+
+);
+
+Multiplexer2to1
+#(
+	.NBits(32)
+)
+MUX_ForwardB2
+(
+	.Selector(forwardB_wire[0]),
+	.MUX_Data0(multiplexerB1_wire),
+	.MUX_Data1(WriteData_wire),
+	
+	.MUX_Output(ALUOperand_B_wire)
+
 );
 
 //******************************************************************/
@@ -510,8 +597,8 @@ ALU
 ArithmeticLogicUnit 
 (
 	.ALUOperation(ALUOperation_wire),
-	.A(EX_ReadData1_wire),
-	.B(ReadData2OrInmmediate_wire),
+	.A(ALUOperand_A_wire),
+	.B(ALUOperand_B_wire),
 	.shamt(EX_SHAMT),
 	.Zero(Zero_wire),
 	.ALUResult(ALUResult_wire)
