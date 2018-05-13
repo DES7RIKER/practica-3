@@ -153,6 +153,8 @@ wire Zero_wire;
 wire flush_wire;
 wire jump_flags;
 
+wire [4:0] WriteRegisterOrRa;
+
 PipeRegister
 #(
 	.N(64)
@@ -180,7 +182,7 @@ ID_EX_Register
 	.reset(reset),
 	.enable(1'b1),
 	//.flush(flush_wire),
-	.flush(0'b0),
+	.flush(1'b0),
 	.DataInput({controlSignals_wire,
 					ID_PC_4_wire,
 					ReadData1_wire,
@@ -224,7 +226,7 @@ EX_MEM_Register
 	.reset(reset),
 	.enable(1'b1),
 	//.flush(flush_wire),
-	.flush(0'b0),
+	.flush(1'b0),
 	.DataInput({EX_RegWrite_wire,  
 					EX_jal_wire,
 					EX_MemtoReg_wire,
@@ -264,7 +266,7 @@ MEM_WB_Register
 	.reset(reset),
 	.enable(1'b1),
 	//.flush(flush_wire),
-	.flush(0'b0),
+	.flush(1'b0),
 	.DataInput({MEM_RegWrite_wire,  
 					MEM_jal_wire,
 					MEM_MemtoReg_wire,
@@ -503,7 +505,7 @@ MUX_ForRTypeAndIType
 	.MUX_Data0(EX_RT),//rt
 	.MUX_Data1(EX_RD),//rd
 	
-	.MUX_Output(WriteRegisternojal_wire)
+	.MUX_Output(WriteRegister_wire)
 
 );
 
@@ -529,15 +531,13 @@ Multiplexer2to1
 )
 MUX_Write_addRa
 (
-	.Selector(EX_jal_wire),
-	.MUX_Data0(WriteRegisternojal_wire),
+	.Selector(jal_wire),
+	.MUX_Data0(WB_WriteRegister_wire),
 	.MUX_Data1(5'b11111), //31 de $ra
 	
-	.MUX_Output(WriteRegister_wire)
+	.MUX_Output(WriteRegisterOrRa)
 
 );
-
-
 
 
 Multiplexer2to1
@@ -546,9 +546,9 @@ Multiplexer2to1
 )
 MUX_Write_dataRa
 (
-	.Selector(WB_jal_wire),
+	.Selector(jal_wire),
 	.MUX_Data0(WriteDatanojal_wire), //lo usa el memtoreg
-	.MUX_Data1(WB_PC_4_wire),
+	.MUX_Data1(PC_4_wire),
 	.MUX_Output(WriteData_wire)
 
 );
@@ -617,7 +617,7 @@ Register_File
 	.clk(clk),
 	.reset(reset),
 	.RegWrite(secureRegWrite_wire),
-	.WriteRegister(WB_WriteRegister_wire),
+	.WriteRegister(WriteRegisterOrRa),
 	.ReadRegister1(ID_Instruction_wire[25:21]),
 	.ReadRegister2(ID_Instruction_wire[20:16]),
 	.WriteData(WriteData_wire),
@@ -678,11 +678,11 @@ assign branchA_wire = BranchNE_wire && ~Zero_wire;
 assign branchB_wire = BranchEQ_wire && Zero_wire;
 assign branch_wire  = branchA_wire || branchB_wire; // Para el multiplexor
 
-assign secureRegWrite_wire = WB_RegWrite_wire && ~jr_wire;
+//assign secureRegWrite_wire = WB_RegWrite_wire && ~jr_wire;
 //assign secureRegWrite_wire = WB_RegWrite_wire && ~1'b0;
 
 //assign jump_flags = branch_wire || jump_wire || jr_wire;
-
+assign secureRegWrite_wire = RegWrite_wire && ~jr_wire;
 
 assign flush_wire = (BranchEQ_wire && Zero_wire) || (BranchNE_wire && ~Zero_wire) || jump_wire || jr_wire;
 
