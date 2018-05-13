@@ -676,12 +676,14 @@ assign ALUResultOut = ALUResult_wire;
 
 assign branchA_wire = BranchNE_wire && ~Zero_wire;
 assign branchB_wire = BranchEQ_wire && Zero_wire;
-assign branch_wire  = branchA_wire || branchB_wire;
+assign branch_wire  = branchA_wire || branchB_wire; // Para el multiplexor
 
 assign secureRegWrite_wire = WB_RegWrite_wire && ~jr_wire;
 //assign secureRegWrite_wire = WB_RegWrite_wire && ~1'b0;
 
-assign jump_flags = branch_wire || jump_wire || jr_wire;
-assign flush_wire = jump_flags && Zero_wire;
+//assign jump_flags = branch_wire || jump_wire || jr_wire;
+
+
+assign flush_wire = (BranchEQ_wire && Zero_wire) || (BranchNE_wire && ~Zero_wire) || jump_wire || jr_wire;
 
 endmodule
