@@ -163,6 +163,7 @@ IF_ID_Register
 	.reset(reset),
 	.enable(enableRegister_IF_ID_wire),
 	.flush(flush_wire),
+	//.flush(0'b0),
 	.DataInput({Instruction_wire, PC_4_wire}),
 	
 	.DataOutput({ID_Instruction_wire, ID_PC_4_wire})
@@ -178,7 +179,8 @@ ID_EX_Register
 	.clk(clk),
 	.reset(reset),
 	.enable(1'b1),
-	.flush(flush_wire),
+	//.flush(flush_wire),
+	.flush(0'b0),
 	.DataInput({controlSignals_wire,
 					ID_PC_4_wire,
 					ReadData1_wire,
@@ -221,7 +223,8 @@ EX_MEM_Register
 	.clk(clk),
 	.reset(reset),
 	.enable(1'b1),
-	.flush(flush_wire),
+	//.flush(flush_wire),
+	.flush(0'b0),
 	.DataInput({EX_RegWrite_wire,  
 					EX_jal_wire,
 					EX_MemtoReg_wire,
@@ -260,6 +263,7 @@ MEM_WB_Register
 	.clk(clk),
 	.reset(reset),
 	.enable(1'b1),
+	//.flush(flush_wire),
 	.flush(0'b0),
 	.DataInput({MEM_RegWrite_wire,  
 					MEM_jal_wire,
@@ -573,7 +577,7 @@ Adder32bits
 AdderPCplus4AndBranchAddress
 (
 	.Data0({InmmediateExtend_wire[29:0], 2'b00}),	// Branch Address, despreciamos los bits más significativos porque se va a hacer un shifteo 2 bits a la izquierda
-	.Data1(PC_4_wire),
+	.Data1(ID_PC_4_wire),
 	
 	.Result(pcWithBranch_wire)
 );
@@ -586,7 +590,7 @@ MUX_ForJumpAddress
 (
 	.Selector(jump_wire),
 	.MUX_Data0(branchAddress_wire),
-	.MUX_Data1({PC_4_wire[31:28], ID_Instruction_wire[25:0], 2'b00}), // Jump Address
+	.MUX_Data1({ID_PC_4_wire[31:28], ID_Instruction_wire[25:0], 2'b00}), // Jump Address
 	
 	.MUX_Output(jumpAddress_wire)
 

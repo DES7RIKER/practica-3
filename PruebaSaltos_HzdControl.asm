@@ -3,7 +3,7 @@
 	beq $v0, $v0, salto1
 	addi $t2, $zero, 4
 salto1: 
-	bne $zero, $zero, salto2
+	bne $v0, $zero, salto2
 	addi $t2, $zero, 5
 	
 salto2:
