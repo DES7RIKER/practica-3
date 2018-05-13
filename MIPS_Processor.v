@@ -673,6 +673,7 @@ ArithmeticLogicUnit
 assign ALUResultOut = ALUResult_wire;
 
 
+
 assign branchA_wire = BranchNE_wire && ~Zero_wire;
 assign branchB_wire = BranchEQ_wire && Zero_wire;
 assign branch_wire  = branchA_wire || branchB_wire;
