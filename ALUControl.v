@@ -16,8 +16,7 @@ module ALUControl
 (
 	input [3:0] ALUOp,
 	input [5:0] ALUFunction,
-	output [3:0] ALUOperation,
-	output reg Jr
+	output [3:0] ALUOperation
 
 );
 								 //  Control ROM
@@ -69,7 +68,6 @@ always@(Selector)begin
 		
 		default: ALUControlValues = 4'b1111;
 	endcase
-	Jr = (Selector == R_Type_JR) ? 1'b1 : 1'b0;
 end
 
 

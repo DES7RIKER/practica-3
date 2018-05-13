@@ -56,7 +56,6 @@ wire ZeroANDBrachEQ;
 wire ORForBranch;
 wire ALUSrc_wire;
 wire RegWrite_wire;
-wire Zero_wire;
 wire MemRead_wire;			// Habilitadores RAM
 wire MemWrite_wire;			// Habilitadores RAM
 wire MemtoReg_wire;			// Bandera para multiplexor de ALU-RAM
@@ -150,6 +149,10 @@ wire enableRegister_IF_ID_wire;
 wire disableControlSignals_wire;
 wire [8:0] controlSignals_wire;
 
+wire Zero_wire;
+wire flush_wire;
+wire jump_flags;
+
 PipeRegister
 #(
 	.N(64)
@@ -159,6 +162,7 @@ IF_ID_Register
 	.clk(clk),
 	.reset(reset),
 	.enable(enableRegister_IF_ID_wire),
+	.flush(flush_wire),
 	.DataInput({Instruction_wire, PC_4_wire}),
 	
 	.DataOutput({ID_Instruction_wire, ID_PC_4_wire})
@@ -174,6 +178,7 @@ ID_EX_Register
 	.clk(clk),
 	.reset(reset),
 	.enable(1'b1),
+	.flush(flush_wire),
 	.DataInput({controlSignals_wire,
 					ID_PC_4_wire,
 					ReadData1_wire,
@@ -216,6 +221,7 @@ EX_MEM_Register
 	.clk(clk),
 	.reset(reset),
 	.enable(1'b1),
+	.flush(flush_wire),
 	.DataInput({EX_RegWrite_wire,  
 					EX_jal_wire,
 					EX_MemtoReg_wire,
@@ -254,6 +260,7 @@ MEM_WB_Register
 	.clk(clk),
 	.reset(reset),
 	.enable(1'b1),
+	.flush(0'b0),
 	.DataInput({MEM_RegWrite_wire,  
 					MEM_jal_wire,
 					MEM_MemtoReg_wire,
@@ -393,11 +400,28 @@ MUX_StallForLW
 //******************************************************************/
 //******************************************************************/
 //******************************************************************/
+Equals
+EqualsRegs
+(
+	.Register0(ReadData1_wire),
+	.Register1(ReadData2_wire),
+	
+	.Zero(Zero_wire)
+);
 
+
+
+
+//******************************************************************/
+//******************************************************************/
+//******************************************************************/
+//******************************************************************/
+//******************************************************************/
 Control
 ControlUnit
 (
 	.OP(ID_Instruction_wire[31:26]),
+	.Funct(ID_Instruction_wire[5:0]),
 	.RegDst(RegDst_wire),
 	.BranchNE(BranchNE_wire),
 	.BranchEQ(BranchEQ_wire),
@@ -408,7 +432,8 @@ ControlUnit
 	.MemWrite(MemWrite_wire),
 	.MemtoReg(MemtoReg_wire),
 	.Jump(jump_wire),
-	.Jal(jal_wire)
+	.Jal(jal_wire),
+	.Jr(jr_wire)
 );
 
 PC_Register
@@ -535,9 +560,9 @@ Multiplexer2to1
 )
 MUX_ForBranchAddress
 (
-	.Selector(MEM_branch_wire),
+	.Selector(branch_wire),
 	.MUX_Data0(PC_4_wire),
-	.MUX_Data1(MEM_pcWithBranch_wire), 
+	.MUX_Data1(pcWithBranch_wire), 
 	
 	.MUX_Output(branchAddress_wire)
 
@@ -547,8 +572,8 @@ MUX_ForBranchAddress
 Adder32bits
 AdderPCplus4AndBranchAddress
 (
-	.Data0({EX_InmmediateExtend_wire[29:0], 2'b00}),	// Branch Address, despreciamos los bits más significativos porque se va a hacer un shifteo 2 bits a la izquierda
-	.Data1(EX_PC_4_wire),
+	.Data0({InmmediateExtend_wire[29:0], 2'b00}),	// Branch Address, despreciamos los bits más significativos porque se va a hacer un shifteo 2 bits a la izquierda
+	.Data1(PC_4_wire),
 	
 	.Result(pcWithBranch_wire)
 );
@@ -564,6 +589,20 @@ MUX_ForJumpAddress
 	.MUX_Data1({PC_4_wire[31:28], ID_Instruction_wire[25:0], 2'b00}), // Jump Address
 	
 	.MUX_Output(jumpAddress_wire)
+
+);
+
+Multiplexer2to1
+#(
+	.NBits(32)
+)
+MUX_ForJrJump
+(
+	.Selector(jr_wire),
+	.MUX_Data0(jumpAddress_wire),
+	.MUX_Data1(ReadData1_wire),
+	
+	.MUX_Output(newPC_wire)
 
 );
 
@@ -612,24 +651,8 @@ ArithmeticLogicUnitControl
 (
 	.ALUOp(EX_ALUOp_wire),
 	.ALUFunction(EX_FUNCT),
-	.ALUOperation(ALUOperation_wire),
-	.Jr(jr_wire)
-
-);
-
-Multiplexer2to1
-#(
-	.NBits(32)
-)
-MUX_ForJrJump
-(
-	//.Selector(jr_wire),
-	.Selector(1'b0),
-	.MUX_Data0(jumpAddress_wire),
-	.MUX_Data1(ReadData1_wire),
+	.ALUOperation(ALUOperation_wire)
 	
-	.MUX_Output(newPC_wire)
-
 );
 
 
@@ -640,19 +663,20 @@ ArithmeticLogicUnit
 	.A(ALUOperand_A_wire),
 	.B(ALUOperand_B_wire),
 	.shamt(EX_SHAMT),
-	.Zero(Zero_wire),
 	.ALUResult(ALUResult_wire)
 );
 
 assign ALUResultOut = ALUResult_wire;
 
 
-assign branchA_wire = MEM_BranchNE_wire && ~MEM_Zero_wire;
-assign branchB_wire = MEM_BranchEQ_wire && MEM_Zero_wire;
+assign branchA_wire = BranchNE_wire && ~Zero_wire;
+assign branchB_wire = BranchEQ_wire && Zero_wire;
 assign branch_wire  = branchA_wire || branchB_wire;
 
-//assign secureRegWrite_wire = WB_RegWrite_wire && ~jr_wire;
-assign secureRegWrite_wire = WB_RegWrite_wire && ~1'b0;
+assign secureRegWrite_wire = WB_RegWrite_wire && ~jr_wire;
+//assign secureRegWrite_wire = WB_RegWrite_wire && ~1'b0;
+
+assign jump_flags = branch_wire || jump_wire || jr_wire;
+assign flush_wire = jump_flags && Zero_wire;
 
 endmodule
-

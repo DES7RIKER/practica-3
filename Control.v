@@ -14,9 +14,11 @@
 module Control
 (
 	input [5:0]OP,
+	input [5:0] Funct,
 	
 	output Jal,
 	output Jump,
+	output reg Jr,
 	output RegDst,
 	output BranchEQ,
 	output BranchNE,
@@ -64,7 +66,9 @@ always@(OP) begin
 		
 		default:
 			ControlValues= 14'b00000000000000;
-		endcase
+	endcase
+	
+	Jr <= (Funct == 6'b001000) ? 1:0;
 end	
 
 assign Jal = ControlValues[13];

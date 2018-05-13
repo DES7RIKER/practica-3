@@ -17,6 +17,7 @@ module PipeRegister
 	input clk,
 	input reset,
 	input enable,
+	input flush,
 	input  [N-1:0] DataInput,
 	
 	
@@ -25,6 +26,8 @@ module PipeRegister
 
 always@(negedge reset or posedge clk) begin // Para que escriba en flanco de subida
 	if(reset==0)
+		DataOutput <= 0;
+	else if(flush == 1)
 		DataOutput <= 0;
 	else	
 		if(enable==1)
