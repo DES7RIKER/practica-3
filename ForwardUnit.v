@@ -16,16 +16,24 @@ always@(*) begin // Toma todas las entradas como lista de sensibilidad
 	// EX Forward Unit
 	if(EX_MEM_RegWrite == 1 && EX_MEM_WriteRegister != 0 && EX_MEM_WriteRegister == ID_EX_RegisterRs)
 		ForwardA <= 2'b10;
+	else
+		ForwardA <= 2'b00;
 		
 	if(EX_MEM_RegWrite == 1 && EX_MEM_WriteRegister != 0 && EX_MEM_WriteRegister == ID_EX_RegisterRt)
 		ForwardB <= 2'b10;
+	else
+		ForwardB <= 2'b00;
 		
 	// MEM Forward Unit
 	if(MEM_WB_RegWrite == 1 && MEM_WB_WriteRegister != 0 && MEM_WB_WriteRegister == ID_EX_RegisterRs && EX_MEM_WriteRegister != ID_EX_RegisterRs)
 		ForwardA <= 2'b01;
+	else
+		ForwardA <= 2'b00;
 		
 	if(MEM_WB_RegWrite == 1 && MEM_WB_WriteRegister != 0 && MEM_WB_WriteRegister == ID_EX_RegisterRt && EX_MEM_WriteRegister != ID_EX_RegisterRt)
 		ForwardB <= 2'b01;
+	else
+		ForwardB <= 2'b00;
 	
 
 end
