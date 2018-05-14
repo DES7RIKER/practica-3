@@ -68,7 +68,7 @@ always@(OP) begin
 			ControlValues= 14'b00000000000000;
 	endcase
 	
-	Jr <= (Funct == 6'b001000) ? 1:0;
+	Jr <= (Funct == 6'b001000 && OP == 6'b000000) ? 1:0;
 end	
 
 assign Jal = ControlValues[13];

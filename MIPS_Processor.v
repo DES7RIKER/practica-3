@@ -338,7 +338,7 @@ Multiplexer2to1
 )
 MUX_ForwardB1
 (
-	.Selector(forwardB_wire[1]),
+	.Selector(forwardB_wire[1] && ~EX_MemRead_wire && ~ID_MemWrite_wire),
 	.MUX_Data0(ReadData2OrInmmediate_wire), //Salida del multiplexor que elige registro o inmediato
 	.MUX_Data1(MEM_ALUResult_wire),
 	
@@ -548,7 +548,7 @@ MUX_Write_dataRa
 (
 	.Selector(jal_wire),
 	.MUX_Data0(WriteDatanojal_wire), //lo usa el memtoreg
-	.MUX_Data1(PC_4_wire),
+	.MUX_Data1(ID_PC_4_wire),
 	.MUX_Output(WriteData_wire)
 
 );
@@ -685,5 +685,6 @@ assign branch_wire  = branchA_wire || branchB_wire; // Para el multiplexor
 assign secureRegWrite_wire = RegWrite_wire && ~jr_wire;
 
 assign flush_wire = (BranchEQ_wire && Zero_wire) || (BranchNE_wire && ~Zero_wire) || jump_wire || jr_wire;
+
 
 endmodule
