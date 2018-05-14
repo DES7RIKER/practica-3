@@ -19,6 +19,7 @@ addi $t0, $s1, 5         #12
 #sub $a0, $v0, $t0        #-5
 #add $v0, $zero, $v0      #5
 
+
 add $zero,$zero, $zero
 add $zero,$zero, $zero
 add $zero,$zero, $zero

@@ -324,6 +324,7 @@ Multiplexer2to1
 )
 MUX_ForwardA2
 (
+	//.Selector(forwardA_wire[0] && ~EX_MemRead_wire && ~ID_MemWrite_wire),
 	.Selector(forwardA_wire[0]),
 	.MUX_Data0(multiplexerA1_wire),
 	.MUX_Data1(WriteData_wire),
@@ -338,7 +339,8 @@ Multiplexer2to1
 )
 MUX_ForwardB1
 (
-	.Selector(forwardB_wire[1] && ~EX_MemRead_wire && ~ID_MemWrite_wire),
+	//.Selector(forwardB_wire[1] && ~EX_MemRead_wire && ~ID_MemWrite_wire),
+	.Selector(forwardB_wire[1]),
 	.MUX_Data0(ReadData2OrInmmediate_wire), //Salida del multiplexor que elige registro o inmediato
 	.MUX_Data1(MEM_ALUResult_wire),
 	
